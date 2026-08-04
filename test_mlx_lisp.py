@@ -74,5 +74,39 @@ class TestPrimitives(unittest.TestCase):
         self.assertEqual(a, b)
 
 
+@unittest.skipUnless(HAVE_MLX, "mlx not installed")
+class TestModel(unittest.TestCase):
+    """Runs model.lisp in smoke config (T=32, D=32, H=2, L=2)."""
+
+    def setUp(self):
+        open("SMOKE", "w").close()
+        self.env = gpu_env()
+        run('(load "model.lisp")', self.env)
+
+    def tearDown(self):
+        os.remove("SMOKE")
+
+    def test_smoke_config_active(self):
+        self.assertEqual(run("(list T D H L)", self.env), [32, 32, 2, 2])
+
+    def test_gpt_output_shape(self):
+        r = run("(define p (init-params)) "
+                "(shape (gpt p (randint 0 V (list 2 T))))", self.env)
+        self.assertEqual(r, [2, 32, 128])
+
+    def test_initial_loss_near_uniform(self):
+        # untrained loss should be near -log(1/128) = 4.85
+        loss = run("(define p (init-params)) "
+                   "(item (batch-loss p (randint 0 V (list 4 T)) "
+                   "(randint 0 V (list 4 T))))", self.env)
+        self.assertGreater(loss, 3.0)
+        self.assertLess(loss, 7.0)
+
+    def test_sample_text_length(self):
+        r = run("(define p (init-params)) (sample-text p 5 1.0)", self.env)
+        # prompt "(define " is 8 chars + 5 generated
+        self.assertEqual(len(r), 13)
+
+
 if __name__ == "__main__":
     unittest.main()
