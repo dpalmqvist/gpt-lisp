@@ -9,9 +9,11 @@ Two facts make this extension nearly free:
 
 import functools
 import operator as op
+import os
 import sys
 
 import mlx.core as mx
+from mlx.utils import tree_flatten, tree_unflatten
 
 from lisp import standard_env, evaluate, tokenize, parse, repl, String
 
@@ -79,7 +81,25 @@ def gpu_env():
         "range":   lambda *a: list(range(*a)),
         "slice":   lambda xs, i, j: xs[i:j],
         "nth":     lambda xs, i: xs[i],
+
+        # --- scaling-run primitives ---
+        "randint": lambda lo, hi, shape: mx.random.randint(lo, hi, shape),
+        "transpose-axes": lambda a, axes: mx.transpose(a, axes),
+        "pow": lambda a, b: a ** b,
+        "save-tree": lambda path, tree: mx.savez(path, **dict(tree_flatten(tree))),
+        "load-tree": lambda path: tree_unflatten(list(mx.load(path).items())),
+        "read-file": lambda path: String(open(path).read()),
+        "exists?": os.path.exists,
+        "seed": lambda n: mx.random.seed(n),
     })
+
+    def lisp_load(path):
+        with open(path) as f:
+            toks = tokenize(f.read())
+        while toks:
+            evaluate(parse(toks), env)
+
+    env["load"] = lisp_load
     return env
 
 
