@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 .venv/
+corpus_repos/
+corpus.txt
+*.npz
+SMOKE
