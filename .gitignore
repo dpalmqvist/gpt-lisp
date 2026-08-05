@@ -6,3 +6,4 @@ corpus_repos/
 corpus.txt
 *.npz
 SMOKE
+train.log
