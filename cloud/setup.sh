@@ -3,5 +3,5 @@
 set -e
 python3 -m venv "$HOME/venv"
 "$HOME/venv/bin/pip" install -q --upgrade pip
-"$HOME/venv/bin/pip" install -q "mlx[cuda]" numpy datasets
+"$HOME/venv/bin/pip" install -q "mlx[cuda]" nvidia-cuda-runtime-cu12 numpy datasets
 "$HOME/venv/bin/python" -c "import mlx.core as mx; print('mlx device:', mx.default_device())"
