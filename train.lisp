@@ -100,8 +100,11 @@
       (begin
         (display "resuming from ckpt.npz")
         (define st (load-tree "ckpt.npz"))
-        (list (item (car st)) (item (nth st 1))
-              (nth st 2) (nth st 3) (nth st 4)))
+        (if (= (length st) 5)
+            (list (item (car st)) (item (nth st 1))
+                  (nth st 2) (nth st 3) (nth st 4))
+            (list (item (car st)) 999.0
+                  (nth st 1) (nth st 2) (nth st 3))))
       (begin
         (define p (init-params))
         (list 0 999.0 p (tree-zeros p) (tree-zeros p)))))
