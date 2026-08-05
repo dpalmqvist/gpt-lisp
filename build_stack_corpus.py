@@ -13,6 +13,7 @@ import random
 LANGS = ["common-lisp", "scheme", "emacs-lisp", "racket", "clojure"]
 KEEP = frozenset({9, 10} | set(range(32, 127)))
 MIN_DOC_BYTES = 100
+MLX_MAX_ELEMENTS = 2**31 - 1  # MLX arrays use int32 for shape dimensions
 
 
 def ascii_filter(text: str) -> bytes:
@@ -22,6 +23,10 @@ def ascii_filter(text: str) -> bytes:
 def shuffle_docs(docs: list, seed: int) -> list:
     random.Random(seed).shuffle(docs)
     return docs
+
+
+def byte_budget(max_gb: float) -> int:
+    return min(int(max_gb * 1e9), MLX_MAX_ELEMENTS)
 
 
 def collect(max_bytes: int):
@@ -52,7 +57,10 @@ def main():
     ap.add_argument("--out", default="corpus.bin")
     ap.add_argument("--seed", type=int, default=1234)
     args = ap.parse_args()
-    docs, total = collect(int(args.max_gb * 1e9))
+    max_bytes = byte_budget(args.max_gb)
+    if max_bytes < args.max_gb * 1e9:
+        print(f"clamping corpus to MLX int32 limit: {max_bytes / 1e9:.2f} GB (requested {args.max_gb} GB)", flush=True)
+    docs, total = collect(max_bytes)
     shuffle_docs(docs, args.seed)
     with open(args.out, "wb") as f:
         for d in docs:

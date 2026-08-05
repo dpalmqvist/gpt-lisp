@@ -2,7 +2,7 @@
 
 import unittest
 
-from build_stack_corpus import ascii_filter, shuffle_docs
+from build_stack_corpus import ascii_filter, shuffle_docs, byte_budget
 
 
 class TestAsciiFilter(unittest.TestCase):
@@ -24,6 +24,14 @@ class TestShuffle(unittest.TestCase):
     def test_actually_shuffles(self):
         docs = [bytes([i]) for i in range(50)]
         self.assertNotEqual(shuffle_docs(list(docs), 7), docs)
+
+
+class TestByteBudget(unittest.TestCase):
+    def test_clamps_to_mlx_limit(self):
+        self.assertEqual(byte_budget(5.0), 2**31 - 1)
+
+    def test_small_budget_unchanged(self):
+        self.assertEqual(byte_budget(0.001), 1_000_000)
 
 
 if __name__ == "__main__":
