@@ -42,8 +42,8 @@ Example output:
 ## Scaled training run
 
 The ambitious version: a ~4.8M-parameter, 6-block, 8-head GPT trained on real
-Lisp — Norvig's *Paradigms of AI Programming* code plus the chibi-scheme
-library tree (~MBs of ASCII source).
+Lisp — Norvig's *Paradigms of AI Programming* code, chibi-scheme, SBCL,
+Guile, and GNU Emacs's Elisp tree (~60MB of ASCII source).
 
 ```sh
 ./fetch_corpus.sh                        # build corpus.txt
