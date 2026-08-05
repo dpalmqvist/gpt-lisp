@@ -39,6 +39,26 @@ Example output:
 "(define (fib n) (if (< n 2) n (+ 1) (fifififififact ..."
 ```
 
+## Scaled training run
+
+The ambitious version: a ~4.8M-parameter, 6-block, 8-head GPT trained on real
+Lisp — Norvig's *Paradigms of AI Programming* code plus the chibi-scheme
+library tree (~MBs of ASCII source).
+
+```sh
+./fetch_corpus.sh                        # build corpus.txt
+python3 mlx_lisp.py train.lisp           # train (resumes from ckpt.npz)
+python3 mlx_lisp.py sample.lisp          # generate from best checkpoint
+```
+
+- `model.lisp` — config + architecture (multi-head attention, learned
+  layernorm), pure functions.
+- `train.lisp` — minibatched Adam in Lisp tree-maps, an `mx.compile`'d train
+  step (the interpreter is traced once, then replays as a fused graph),
+  checkpoints every 1000 steps, automatic resume.
+- `sample.lisp` — load `ckpt-best.npz`, generate.
+- `touch SMOKE` first for a 1-minute end-to-end pipeline test.
+
 ## Tests
 
 ```sh
