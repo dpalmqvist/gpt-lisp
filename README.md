@@ -43,7 +43,7 @@ Example output:
 
 The ambitious version: a ~4.8M-parameter, 6-block, 8-head GPT trained on real
 Lisp — Norvig's *Paradigms of AI Programming* code, chibi-scheme, SBCL,
-Guile, and GNU Emacs's Elisp tree (~60MB of ASCII source).
+Guile, and GNU Emacs's Elisp tree (~100MB of ASCII source).
 
 ```sh
 ./fetch_corpus.sh                        # build corpus.txt
