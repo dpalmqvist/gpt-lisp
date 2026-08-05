@@ -62,5 +62,6 @@ python3 mlx_lisp.py sample.lisp          # generate from best checkpoint
 ## Tests
 
 ```sh
-python3 -m unittest test_lisp
+python3 -m unittest test_lisp        # interpreter (no mlx needed)
+python3 -m unittest test_mlx_lisp    # MLX layer + model + training smoke
 ```

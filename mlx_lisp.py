@@ -86,7 +86,9 @@ def gpu_env():
         "randint": lambda lo, hi, shape: mx.random.randint(lo, hi, shape),
         "transpose-axes": lambda a, axes: mx.transpose(a, axes),
         "pow": lambda a, b: a ** b,
-        "save-tree": lambda path, tree: mx.savez(path, **dict(tree_flatten(tree))),
+        "save-tree": lambda path, tree: (
+            mx.savez(path + ".tmp.npz", **dict(tree_flatten(tree))),
+            os.replace(path + ".tmp.npz", path))[-1],
         "load-tree": lambda path: tree_unflatten(list(mx.load(path).items())),
         "read-file": lambda path: String(open(path).read()),
         "exists?": os.path.exists,

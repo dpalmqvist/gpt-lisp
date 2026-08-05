@@ -1,6 +1,6 @@
 ; ============================================================
 ; train.lisp — minibatched Adam training with checkpoints/resume.
-; Run: /tmp/mlx-venv/bin/python mlx_lisp.py train.lisp
+; Run: python3 mlx_lisp.py train.lisp
 ; Smoke test: touch SMOKE first (tiny model, 50 steps).
 ; ============================================================
 
@@ -65,10 +65,9 @@
 ; --- compiled train step: traced through the interpreter ONCE ---
 (define step-fn (jit (vgrad batch-loss)))
 
-(define (save-ckpt path step p m v)
-  (save-tree path (list (array (list step) "int32") p m v)))
-
-(define best-val 999.0)
+(define (save-ckpt path step best p m v)
+  (save-tree path (list (array (list step) "int32")
+                        (array (list best) "float32") p m v)))
 
 (define (train-loop p m v step)
   (if (> step steps)
@@ -88,10 +87,10 @@
             (when (< vl best-val)
               (begin
                 (set! best-val vl)
-                (save-ckpt "ckpt-best.npz" step p2 m2 v2)))))
+                (save-ckpt "ckpt-best.npz" step vl p2 m2 v2)))))
         (when (= (mod step ckpt-every) 0)
           (begin
-            (save-ckpt "ckpt.npz" step p2 m2 v2)
+            (save-ckpt "ckpt.npz" step best-val p2 m2 v2)
             (display (sample-text p2 150 0.5))))
         (train-loop p2 m2 v2 (+ step 1)))))
 
@@ -101,16 +100,20 @@
       (begin
         (display "resuming from ckpt.npz")
         (define st (load-tree "ckpt.npz"))
-        (list (item (car st)) (nth st 1) (nth st 2) (nth st 3)))
+        (list (item (car st)) (item (nth st 1))
+              (nth st 2) (nth st 3) (nth st 4)))
       (begin
         (define p (init-params))
-        (list 0 p (tree-zeros p) (tree-zeros p)))))
+        (list 0 999.0 p (tree-zeros p) (tree-zeros p)))))
+
+(define best-val (nth state0 1))
 
 (display (list "device" (device) "corpus-chars" n "smoke" smoke
-               "start-step" (+ (car state0) 1) "of" steps))
+               "start-step" (+ (car state0) 1) "of" steps
+               "best-val" best-val))
 
 (define final
-  (train-loop (nth state0 1) (nth state0 2) (nth state0 3)
+  (train-loop (nth state0 2) (nth state0 3) (nth state0 4)
               (+ (car state0) 1)))
 
 (display (list "done. final val loss" (val-loss final)))
