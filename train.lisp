@@ -7,17 +7,20 @@
 (load "model.lisp")
 (defmacro (when test body) `(if ,test ,body))
 
-(define steps (if smoke 50 50000))
+(define steps (if smoke 50 (if cloud 100000 50000)))
 (define lr 0.0003)
 (define b1 0.9)
 (define b2 0.99)
 (define eps 0.00000001)
 (define log-every (if smoke 10 250))
 (define ckpt-every (if smoke 25 1000))
+(define sample-every (if smoke 25 (if cloud 5000 1000)))
 (define nval-batch 4)
 
 ; --- data: char ids, last 5% is validation ---
-(define ids (text->ids (read-file "corpus.txt")))
+(define ids (if (exists? "corpus.bin")
+                (read-corpus "corpus.bin")
+                (array (text->ids (read-file "corpus.txt")) "int32")))
 (define n (length ids))
 (define nval (floor (* 0.05 n)))
 (define ntrain (- n nval))
@@ -29,7 +32,7 @@
 (define (get-batch src nmax)     ; -> (xb yb), each (B T) int32
   (begin
     (define pos (+ (reshape (randint 0 nmax (list B)) (list B 1)) tvec))
-    (list (take src pos) (take src (+ pos 1)))))
+    (list (int32 (take src pos)) (int32 (take src (+ pos 1))))))
 
 (seed 1234)                      ; fixed val batches for comparable losses
 (define val-batches
@@ -37,7 +40,7 @@
 (seed 42)
 
 (define (val-loss p)
-  (/ (apply + (map (lambda (vb) (item (batch-loss p (car vb) (nth vb 1))))
+  (/ (apply + (map (lambda (vb) (item (val-fn p (car vb) (nth vb 1))))
                    val-batches))
      (* 1.0 nval-batch)))
 
@@ -64,6 +67,7 @@
 
 ; --- compiled train step: traced through the interpreter ONCE ---
 (define step-fn (jit (vgrad batch-loss)))
+(define val-fn (jit batch-loss))
 
 (define (save-ckpt path step best p m v)
   (save-tree path (list (array (list step) "int32")
@@ -89,9 +93,9 @@
                 (set! best-val vl)
                 (save-ckpt "ckpt-best.npz" step vl p2 m2 v2)))))
         (when (= (mod step ckpt-every) 0)
-          (begin
-            (save-ckpt "ckpt.npz" step best-val p2 m2 v2)
-            (display (sample-text p2 150 0.5))))
+          (save-ckpt "ckpt.npz" step best-val p2 m2 v2))
+        (when (= (mod step sample-every) 0)
+          (display (sample-text p2 150 0.5)))
         (train-loop p2 m2 v2 (+ step 1)))))
 
 ; --- init or resume ---

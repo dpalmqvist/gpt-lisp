@@ -5,14 +5,15 @@
 ; ============================================================
 
 (define smoke (exists? "SMOKE"))
+(define cloud (exists? "CLOUD"))
 
-(define T (if smoke 32 256))     ; context length
-(define V 128)                   ; vocab = ASCII
-(define D (if smoke 32 256))     ; model width
-(define H (if smoke 2 8))        ; attention heads
-(define HD (if smoke 16 32))     ; head dim = D / H
-(define L (if smoke 2 6))        ; transformer blocks
-(define B (if smoke 8 64))       ; batch size
+(define T (if smoke 32 (if cloud 512 256)))    ; context length
+(define V 128)                                 ; vocab = ASCII
+(define D (if smoke 32 (if cloud 512 256)))    ; model width
+(define H (if smoke 2 8))                      ; attention heads
+(define HD (if smoke 16 (if cloud 64 32)))     ; head dim = D / H
+(define L (if smoke 2 (if cloud 12 6)))        ; transformer blocks
+(define B (if smoke 8 64))                     ; batch size
 
 ; --- parameters ---
 (define (linear nin nout)

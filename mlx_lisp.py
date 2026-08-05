@@ -13,6 +13,7 @@ import os
 import sys
 
 import mlx.core as mx
+import numpy as np
 from mlx.utils import tree_flatten, tree_unflatten
 
 from lisp import standard_env, evaluate, tokenize, parse, repl, String
@@ -91,6 +92,8 @@ def gpu_env():
             os.replace(path + ".tmp.npz", path))[-1],
         "load-tree": lambda path: tree_unflatten(list(mx.load(path).items())),
         "read-file": lambda path: String(open(path).read()),
+        "read-corpus": lambda path: mx.array(np.fromfile(path, dtype=np.uint8)),
+        "int32": lambda a: a.astype(mx.int32),
         "exists?": os.path.exists,
         "seed": lambda n: mx.random.seed(n),
     })

@@ -155,6 +155,80 @@ class TestTraining(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(tmp, "ckpt.npz")))
         self.assertTrue(os.path.exists(os.path.join(tmp, "ckpt-best.npz")))
 
+    def test_smoke_training_from_corpus_bin(self):
+        import re
+        import shutil
+        import subprocess
+        import sys
+        repo = os.getcwd()
+        tmp = tempfile.mkdtemp()
+        shutil.copy(os.path.join(repo, "model.lisp"), tmp)
+        shutil.copy(os.path.join(repo, "train.lisp"), tmp)
+        with open(os.path.join(repo, "corpus.txt"), "rb") as f:
+            head = f.read(200_000)
+        with open(os.path.join(tmp, "corpus.bin"), "wb") as f:
+            f.write(head)
+        open(os.path.join(tmp, "SMOKE"), "w").close()
+        out = subprocess.run(
+            [sys.executable, os.path.join(repo, "mlx_lisp.py"), "train.lisp"],
+            cwd=tmp, capture_output=True, text=True, timeout=300)
+        self.assertEqual(out.returncode, 0, out.stderr[-2000:])
+        losses = [float(m) for m in
+                  re.findall(r'"train" ([0-9.]+)', out.stdout)]
+        self.assertGreaterEqual(len(losses), 3, out.stdout[-2000:])
+        self.assertLess(losses[-1], losses[0] - 0.5)
+
+
+@unittest.skipUnless(HAVE_MLX, "mlx not installed")
+class TestCorpusBin(unittest.TestCase):
+    def test_read_corpus_uint8_roundtrip(self):
+        d = tempfile.mkdtemp()
+        path = os.path.join(d, "c.bin")
+        with open(path, "wb") as f:
+            f.write(bytes([40, 100, 101, 102, 41, 10]))  # "(def)\n"
+        env = gpu_env()
+        self.assertEqual(run(f'(shape (read-corpus "{path}"))', env), [6])
+        self.assertEqual(run(f'(item (at (read-corpus "{path}") 0))', env), 40)
+
+    def test_int32_cast(self):
+        env = gpu_env()
+        # sum of uint8 values would overflow at 255+255 if not widened
+        d = tempfile.mkdtemp()
+        path = os.path.join(d, "c.bin")
+        with open(path, "wb") as f:
+            f.write(bytes([255, 255]))
+        r = run(f'(item (sum (int32 (read-corpus "{path}"))))', env)
+        self.assertEqual(r, 510)
+
+
+@unittest.skipUnless(HAVE_MLX, "mlx not installed")
+class TestCloudConfig(unittest.TestCase):
+    def test_cloud_flag_selects_cloud_tier(self):
+        import shutil
+        repo = os.getcwd()
+        tmp = tempfile.mkdtemp()
+        shutil.copy(os.path.join(repo, "model.lisp"), tmp)
+        os.chdir(tmp)
+        self.addCleanup(os.chdir, repo)
+        open("CLOUD", "w").close()
+        env = gpu_env()
+        run('(load "model.lisp")', env)
+        self.assertEqual(run("(list T D H HD L B)", env),
+                         [512, 512, 8, 64, 12, 64])
+
+    def test_smoke_beats_cloud(self):
+        import shutil
+        repo = os.getcwd()
+        tmp = tempfile.mkdtemp()
+        shutil.copy(os.path.join(repo, "model.lisp"), tmp)
+        os.chdir(tmp)
+        self.addCleanup(os.chdir, repo)
+        open("CLOUD", "w").close()
+        open("SMOKE", "w").close()
+        env = gpu_env()
+        run('(load "model.lisp")', env)
+        self.assertEqual(run("(list T D L)", env), [32, 32, 2])
+
 
 if __name__ == "__main__":
     unittest.main()
