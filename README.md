@@ -72,6 +72,24 @@ Emacs Lisp, Racket, Clojure) reaches val loss ~0.48 in ~8h on one A100
 - `cloud/lambda.sh` — minimal Lambda Cloud API helper (launch/terminate).
 - `cloud/setup.sh` — on-instance setup (`mlx[cuda]` + CUDA headers).
 
+The first full run (2026-08-06) went 4.85 → **0.48** val loss in one pass:
+a Lisp program, interpreting a neural network, learning to write Lisp.
+Sampled from its best checkpoint:
+
+```lisp
+(define (dump-node-slots node)
+    (if (node? node)
+        node
+        (dump-dprod-nodes (node-prod (node-prod node))
+                          (dump-dprod-dprod-nodes node))))
+```
+
+Balanced parens, `cond`/`let*`/`if` idioms, predicate/accessor naming
+conventions, cross-definition references — the flaws left are semantic,
+not syntactic. To sample from a trained checkpoint locally: put it next
+to `model.lisp` as `ckpt-best.npz`, `touch CLOUD` (matching the config
+it was trained with), and run `python3 mlx_lisp.py sample.lisp`.
+
 ## Tests
 
 ```sh
