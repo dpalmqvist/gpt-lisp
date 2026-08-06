@@ -59,6 +59,19 @@ python3 mlx_lisp.py sample.lisp          # generate from best checkpoint
 - `sample.lisp` — load `ckpt-best.npz`, generate.
 - `touch SMOKE` first for a 1-minute end-to-end pipeline test.
 
+## Cloud training (Lambda + MLX CUDA)
+
+The same codebase trains unchanged on NVIDIA GPUs via MLX's CUDA backend.
+A ~38M-param model (`touch CLOUD`: D=512, 12 blocks, T=512) trained 100k
+steps on ~2.1GB of The Stack's Lisp-family code (Common Lisp, Scheme,
+Emacs Lisp, Racket, Clojure) reaches val loss ~0.48 in ~8h on one A100
+(~$18 on Lambda Cloud).
+
+- `build_stack_corpus.py` — streams + shuffles + ASCII-filters the corpus
+  to `corpus.bin` (needs an HF token with the-stack-dedup access).
+- `cloud/lambda.sh` — minimal Lambda Cloud API helper (launch/terminate).
+- `cloud/setup.sh` — on-instance setup (`mlx[cuda]` + CUDA headers).
+
 ## Tests
 
 ```sh
