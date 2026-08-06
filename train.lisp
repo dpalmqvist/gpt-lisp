@@ -24,8 +24,8 @@
 (define n (length ids))
 (define nval (floor (* 0.05 n)))
 (define ntrain (- n nval))
-(define train-ids (array (slice ids 0 ntrain) "int32"))
-(define val-ids (array (slice ids ntrain n) "int32"))
+(define train-ids (slice ids 0 ntrain))
+(define val-ids (slice ids ntrain n))
 (define max-off (- ntrain T))
 
 (define tvec (array (range T) "int32"))

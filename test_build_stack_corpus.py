@@ -2,7 +2,7 @@
 
 import unittest
 
-from build_stack_corpus import ascii_filter, shuffle_docs, byte_budget
+from build_stack_corpus import ascii_filter, shuffle_docs, byte_budget, capped_docs
 
 
 class TestAsciiFilter(unittest.TestCase):
@@ -32,6 +32,26 @@ class TestByteBudget(unittest.TestCase):
 
     def test_small_budget_unchanged(self):
         self.assertEqual(byte_budget(0.001), 1_000_000)
+
+
+class TestCappedDocs(unittest.TestCase):
+    def test_never_exceeds_budget_when_docs_overshoot(self):
+        docs = [bytes([i % 256]) * 30 for i in range(10)]  # 10 docs, 30B each = 300B
+        out = capped_docs(docs, 100)
+        self.assertLessEqual(sum(len(d) for d in out), 100)
+
+    def test_truncates_boundary_doc_rather_than_dropping_it(self):
+        docs = [b"a" * 30, b"b" * 30, b"c" * 30]  # total 90B
+        out = capped_docs(docs, 50)  # boundary falls inside doc 2 (b's)
+        self.assertEqual(out[0], b"a" * 30)
+        self.assertEqual(out[1], b"b" * 20)  # truncated, not dropped
+        self.assertEqual(len(out), 2)
+        self.assertEqual(sum(len(d) for d in out), 50)
+
+    def test_docs_under_budget_pass_through_unchanged(self):
+        docs = [b"a" * 10, b"b" * 10, b"c" * 10]  # total 30B
+        out = capped_docs(docs, 1000)
+        self.assertEqual(out, docs)
 
 
 if __name__ == "__main__":

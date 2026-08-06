@@ -29,6 +29,19 @@ def byte_budget(max_gb: float) -> int:
     return min(int(max_gb * 1e9), MLX_MAX_ELEMENTS)
 
 
+def capped_docs(docs: list, max_bytes: int) -> list:
+    """Truncate the doc list so total bytes never exceed max_bytes (MLX
+    arrays cap at 2**31 - 1 elements)."""
+    out, total = [], 0
+    for d in docs:
+        take = min(len(d), max_bytes - total)
+        if take <= 0:
+            break
+        out.append(d[:take])
+        total += take
+    return out
+
+
 def collect(max_bytes: int):
     from datasets import load_dataset
     docs, total = [], 0
@@ -62,6 +75,8 @@ def main():
         print(f"clamping corpus to MLX int32 limit: {max_bytes / 1e9:.2f} GB (requested {args.max_gb} GB)", flush=True)
     docs, total = collect(max_bytes)
     shuffle_docs(docs, args.seed)
+    docs = capped_docs(docs, max_bytes)
+    total = sum(len(d) for d in docs)
     with open(args.out, "wb") as f:
         for d in docs:
             f.write(d)

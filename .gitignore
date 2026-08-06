@@ -7,3 +7,6 @@ corpus.txt
 *.npz
 SMOKE
 train.log
+CLOUD
+corpus.bin
+build.log
