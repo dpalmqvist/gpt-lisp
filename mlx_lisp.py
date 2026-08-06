@@ -11,6 +11,7 @@ import functools
 import operator as op
 import os
 import sys
+import time
 
 import mlx.core as mx
 import numpy as np
@@ -96,6 +97,16 @@ def gpu_env():
         "int32": lambda a: a.astype(mx.int32),
         "exists?": os.path.exists,
         "seed": lambda n: mx.random.seed(n),
+
+        # --- collatz-grade primitives ---
+        # "//" works on mx arrays AND Python bignums: the scalar escalation
+        # path shares step code with the vector path through this one op.
+        "//": op.floordiv,
+        "int64": lambda a: a.astype(mx.int64),
+        "where": mx.where,
+        "argsort": mx.argsort,
+        "iota": lambda n: mx.arange(n, dtype=mx.int64),  # float32 arange corrupts ints > 2^24
+        "time": time.time,
     })
 
     def lisp_load(path):

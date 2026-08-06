@@ -93,9 +93,29 @@ not syntactic. To sample from a trained checkpoint locally: put it next
 to `model.lisp` as `ckpt-best.npz`, `touch CLOUD` (matching the config
 it was trained with), and run `python3 mlx_lisp.py sample.lisp`.
 
+## Side quest: Collatz to 10^12
+
+`collatz.lisp` verifies the Collatz conjecture for every n ≤ 10^12, entirely
+in the same Lisp. It shows each n ≥ 3 drops below its own start (strong
+induction closes the argument), in three tiers: a mod-2^16 residue sieve
+computed vectorized on the GPU rules out ~97% of numbers wholesale; survivors
+run as ~8.7M-lane int64 GPU batches with periodic stream compaction; and the
+rare lanes whose glide peaks would overflow int64 (they reach ~10^19) retire
+to a scalar recheck on the interpreter, whose numbers are Python bignums.
+
+```sh
+python3 mlx_lisp.py collatz.lisp   # ~168M numbers/s on an M-series laptop,
+                                   # full 10^12 in under 2 h; checkpoints and
+                                   # resumes via collatz-ckpt.npz
+touch SMOKE                        # (first) for a seconds-long 10^7 smoke run
+```
+
+Design notes: `docs/superpowers/specs/2026-08-06-collatz-design.md`.
+
 ## Tests
 
 ```sh
 python3 -m unittest test_lisp        # interpreter (no mlx needed)
 python3 -m unittest test_mlx_lisp    # MLX layer + model + training smoke
+python3 -m unittest test_collatz     # sieve soundness, glide kernel, smoke
 ```
