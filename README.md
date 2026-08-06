@@ -10,6 +10,9 @@ Two facts make the ML layer nearly free:
 2. Lisp lambdas *are* Python callables → `mx.grad` / `mx.compile` accept them
    directly. Autodiff of Lisp code costs one lambda.
 
+**New here? [docs/MANUAL.md](docs/MANUAL.md) is the step-by-step guide** to
+setup, training (laptop or cloud GPU), and sampling.
+
 ## Files
 
 - `lisp.py` — the interpreter: reader, evaluator with tail-call optimization,
