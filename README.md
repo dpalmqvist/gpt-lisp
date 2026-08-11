@@ -104,11 +104,18 @@ rare lanes whose glide peaks would overflow int64 (they reach ~10^19) retire
 to a scalar recheck on the interpreter, whose numbers are Python bignums.
 
 ```sh
-python3 mlx_lisp.py collatz.lisp   # ~168M numbers/s on an M-series laptop,
-                                   # full 10^12 in under 2 h; checkpoints and
-                                   # resumes via collatz-ckpt.npz
+python3 mlx_lisp.py collatz.lisp   # 75–170M numbers/s on an M-series laptop;
+                                   # checkpoints and resumes via collatz-ckpt.npz
 touch SMOKE                        # (first) for a seconds-long 10^7 smoke run
 ```
+
+**Result (2026-08-11):** a full run on an M-series laptop **verified every
+n ≤ 1 000 000 061 439 reaches 1** — ~2.5 h of GPU time across two sessions
+(paused at 52% and resumed from checkpoint five days later). 34 266
+trajectories outgrew int64 and were re-verified exactly on interpreter
+bignums; zero failures. Throughput fades from ~170M to ~75M numbers/s as n
+grows: escalations get denser, and each one runs a few hundred bignum steps
+through the interpreter between GPU batches.
 
 Design notes: `docs/superpowers/specs/2026-08-06-collatz-design.md`.
 
